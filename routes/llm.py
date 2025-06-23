@@ -5,6 +5,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from core.config import settings
 from schemas.llm import LLMRequest
+from services.groq_client import GroqClient
 from services.ollama_client import OllamaClient
 
 router = APIRouter(prefix="/api/llm")
@@ -29,6 +30,20 @@ def get_response(body: LLMRequest):
         client = OllamaClient()
         response = client.get_response(body.prompt, f"{settings.ollama_base_url}/api/chat",
                                        body.model, None, False)
+
+        return {"response": response}
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
+
+@router.post("/groq/chat/completions")
+def get_response(body: LLMRequest):
+    try:
+        client = GroqClient()
+        response = client.get_response(body.prompt, f"{settings.groq_base_url}/chat/completions",
+                                       body.model, settings.groq_api_key, False)
 
         return {"response": response}
 
