@@ -4,6 +4,7 @@ from core.config import settings
 import httpx
 
 from services.llm_client import LLMClient
+from utils.conversation_util import add_to_conversation
 
 
 class OllamaClient(LLMClient):
@@ -11,7 +12,6 @@ class OllamaClient(LLMClient):
         self.base_url = settings.ollama_base_url
 
     def fetch_models_name(self):
-
         response = requests.get(f"{self.base_url}/api/tags")
         data = response.json()
 
@@ -25,15 +25,11 @@ class OllamaClient(LLMClient):
             api_key: str = None,
             stream: bool = True
     ) -> str:
+        add_to_conversation(role="user", content=prompt)
 
         body = {
             "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                 }
-            ],
+            "messages": settings.session_messages,
             "stream": stream
         }
 
@@ -41,6 +37,8 @@ class OllamaClient(LLMClient):
         response.raise_for_status()
         data = response.json()
 
-        return data.get('message', {}).get('content', '')
+        answer = data.get('message', {}).get('content', '')
 
+        add_to_conversation(role="assistant", content=answer)
 
+        return answer

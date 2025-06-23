@@ -2,6 +2,7 @@ import requests
 
 from core.config import settings
 from services.llm_client import LLMClient
+from utils.conversation_util import add_to_conversation
 
 
 class GroqClient(LLMClient):
@@ -16,14 +17,11 @@ class GroqClient(LLMClient):
             api_key: str = settings.groq_api_key,
             stream: bool = False
     ) -> str:
+        add_to_conversation(role="user", content=prompt)
+
         body = {
             "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            "messages": settings.session_messages,
             "stream": stream
         }
 
@@ -36,7 +34,8 @@ class GroqClient(LLMClient):
         response.raise_for_status()
         data = response.json()
 
-        return data['choices'][0]['message']['content']
+        answer = data['choices'][0]['message']['content']
 
+        add_to_conversation(role="assistant", content=answer)
 
-
+        return answer
