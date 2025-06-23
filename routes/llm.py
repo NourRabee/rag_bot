@@ -35,3 +35,8 @@ def get_response(body: LLMRequest):
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
+
+@router.get("/test")
+def test_endpoint():
+    return {"message": "This is a test endpoint!"}
