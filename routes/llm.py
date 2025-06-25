@@ -28,8 +28,8 @@ def fetch_models():
 def get_response(body: LLMRequest):
     try:
         client = OllamaClient()
-        response = client.get_response(body.prompt, f"{settings.ollama_base_url}/api/chat",
-                                       body.model, None, False)
+        response = client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
+                                            f"{settings.ollama_base_url}/api/chat", body.model, False, None)
 
         return {"response": response}
 
@@ -42,11 +42,17 @@ def get_response(body: LLMRequest):
 def get_response(body: LLMRequest):
     try:
         client = GroqClient()
-        response = client.get_response(body.prompt, f"{settings.groq_base_url}/chat/completions",
-                                       body.model, settings.groq_api_key, False)
+        response = client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
+                                            f"{settings.groq_base_url}/chat/completions", body.model, False,
+                                            settings.groq_api_key)
 
         return {"response": response}
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
+
+@router.get("/ping")
+def ping():
+    return {"status": "ok"}

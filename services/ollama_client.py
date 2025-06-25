@@ -4,10 +4,10 @@ from core.config import settings
 import httpx
 
 from services.llm_client import LLMClient
-from utils.conversation_util import add_to_conversation
 
 
 class OllamaClient(LLMClient):
+
     def __init__(self):
         self.base_url = settings.ollama_base_url
 
@@ -25,11 +25,14 @@ class OllamaClient(LLMClient):
             api_key: str = None,
             stream: bool = True
     ) -> str:
-        add_to_conversation(role="user", content=prompt)
+        # add_to_conversation(role="user", content=prompt)
 
         body = {
             "model": model,
-            "messages": settings.session_messages,
+            "messages": [{
+                "role": "user",
+                "content": prompt
+            }],
             "stream": stream
         }
 
@@ -39,6 +42,6 @@ class OllamaClient(LLMClient):
 
         answer = data.get('message', {}).get('content', '')
 
-        add_to_conversation(role="assistant", content=answer)
+        # add_to_conversation(role="assistant", content=answer)
 
         return answer
