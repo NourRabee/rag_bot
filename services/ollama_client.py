@@ -1,14 +1,13 @@
 import requests
 
 from core.config import settings
-import httpx
-
 from services.llm_client import LLMClient
 
 
 class OllamaClient(LLMClient):
 
     def __init__(self):
+        super().__init__()
         self.base_url = settings.ollama_base_url
 
     def fetch_models_name(self):

@@ -5,8 +5,8 @@ from services.llm_client import LLMClient
 
 
 class GroqClient(LLMClient):
-
     def __init__(self):
+        super().__init__()
         self.base_url = settings.groq_base_url
 
     def get_response(
@@ -34,7 +34,6 @@ class GroqClient(LLMClient):
         }
 
         response = requests.post(uri, json=body, headers=headers)
-        print(response.raise_for_status())
         data = response.json()
 
         answer = data['choices'][0]['message']['content']

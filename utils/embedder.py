@@ -13,6 +13,5 @@ def get_embedding(text: str):
     }
 
     response = requests.post(settings.mistral_embedding_url, json=body, headers=headers)
-    print(f"{response.status_code} embedder")
 
     return response.json()["data"][0]["embedding"]
