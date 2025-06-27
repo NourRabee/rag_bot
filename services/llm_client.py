@@ -17,7 +17,7 @@ class LLMClient:
                           api_key=None, namespace="general"):
         query_embedding = get_embedding(prompt)
 
-        raw_result= self.pinecone_db.search(query_embedding, session_id, user_id, namespace)
+        raw_result = self.pinecone_db.search(query_embedding, session_id, user_id, namespace)
         similar_texts = self.pinecone_db.get_text(raw_result)
         print(similar_texts)
 
