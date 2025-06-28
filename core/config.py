@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     groq_base_url: str
     groq_api_key: str
 
-    user_id: str = 'ee127586-e046-44fc-8358-7ff4030da694'
-    session_id: str = 'a5bcb1c6-cd10-4f62-8504-6da4ef302b46'
+    user_id: str = 'ee127586-e046-44fc-8358-7ff4030da695'
+    session_id: str = 'a5bcb1c6-cd10-4f62-8504-6da4ef302b45'
 
     # session_messages: List[dict] = Field(default_factory=list)
 
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # chroma_collection_name: str = "prompts"
 
     pinecone_api_key: str
+    pinecone_index: str = "chatmemory"
 
     class Config:
         env_file = ".env"

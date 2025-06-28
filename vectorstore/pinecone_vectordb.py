@@ -1,40 +1,56 @@
-from pinecone import Pinecone
+from typing import List
 
+from pinecone import Pinecone
+from langchain_mistralai import MistralAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain_core.documents import Document
 from core.config import settings
-from utils.id import generate_vector_id
 
 
 class PineconeService:
     def __init__(self):
         self.pc = Pinecone(api_key=settings.pinecone_api_key)
-        self.index = self.pc.Index(name="chatmemory")
+        self.index = self.pc.Index(name=settings.pinecone_index)
 
-    def upsert(self, embedding, session_id, user_id, text, namespace='general'):
-        _id = generate_vector_id(session_id)
-        self.index.upsert(
-            vectors=[
-                {
-                    "id": _id,
-                    "values": embedding,
-                    "metadata": {"session_id": session_id, "user_id": user_id, "text": text}
+        self.embedding = MistralAIEmbeddings(
+            api_key=settings.mistral_api_key,
+            model="mistral-embed"
+        )
+
+        self.vectorstore = PineconeVectorStore(
+            index=self.index,
+            embedding=self.embedding,
+            text_key="text",
+            namespace="general"
+        )
+
+    def upsert(self, docs: [Document], namespace: str):
+        self.vectorstore.add_documents(docs, namespace=namespace)
+
+    def search(self, prompt, user_id, session_id, top_k=3):
+        retriever = self.vectorstore.as_retriever(search_kwargs={
+            "k": top_k,
+            "filter": {
+                "$and": [
+                    {"user_id": user_id},
+                    {"session_id": session_id}
+                ]
+            }
+        })
+
+        retrieved_docs = retriever.invoke(prompt)
+        return retrieved_docs
+
+    def get_text(self, results):
+        return [doc.page_content for doc in results]
+
+    def convert_to_docs(self, full_text: str, user_id: str, session_id: str) -> List[Document]:
+        return [
+            Document(
+                page_content=full_text,
+                metadata={
+                    "user_id": user_id,
+                    "session_id": session_id
                 }
-            ],
-            namespace=namespace
-        )
-
-    def get_text(self, search_result):
-        texts = [match["metadata"]["text"] for match in search_result["matches"]]
-        return texts
-
-    def search(self, embedding, session_id, user_id, namespace="general", top_k=3, include_metadata=True,
-               include_values=True):
-        raw_result = self.index.query(
-            namespace=namespace,
-            vector=embedding,
-            top_k=top_k,
-            include_metadata=include_metadata,
-            include_values=include_values,
-            filter={"$and": [{"user_id": user_id}, {"session_id": session_id}]}
-
-        )
-        return raw_result
+            )
+        ]

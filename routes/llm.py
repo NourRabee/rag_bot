@@ -5,17 +5,17 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from core.config import settings
 from schemas.llm import LLMRequest
-from services.groq_client import GroqClient
-from services.ollama_client import OllamaClient
+from services.llm_client import LLMClient
 
 router = APIRouter(prefix="/api/llm")
+
+llm_client = LLMClient()
 
 
 @router.get("/ollama/tags")
 def fetch_models():
     try:
-        client = OllamaClient()
-        models_name = client.fetch_models_name()
+        models_name = llm_client.fetch_ollama_models()
 
         return {"models": models_name}
 
@@ -27,9 +27,8 @@ def fetch_models():
 @router.post("/ollama/chat/completions")
 def get_response(body: LLMRequest):
     try:
-        client = OllamaClient()
-        response = client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
-                                            f"{settings.ollama_base_url}/api/chat", body.model, False, None)
+        response = llm_client.handle_user_query(settings.session_id, settings.user_id, body.prompt, body.model,
+                                                "ollama")
 
         return {"response": response}
 
@@ -41,10 +40,8 @@ def get_response(body: LLMRequest):
 @router.post("/groq/chat/completions")
 def get_response(body: LLMRequest):
     try:
-        client = GroqClient()
-        response = client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
-                                            f"{settings.groq_base_url}/chat/completions", body.model, False,
-                                            settings.groq_api_key)
+        response = llm_client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
+                                                body.model, "groq")
 
         return {"response": response}
 
