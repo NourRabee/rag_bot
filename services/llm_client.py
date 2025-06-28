@@ -2,7 +2,7 @@ import requests
 from langchain_core.messages import HumanMessage
 
 from core.config import settings
-from utils.prompt_builder import build_prompt
+from utils.prompts import build_chat_prompt
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from vectorstore.pinecone_vectordb import PineconeService
@@ -20,7 +20,7 @@ class LLMClient:
         similar_docs = self.pinecone_db.get_text(raw_result)
         print(similar_docs)
 
-        built_prompt = build_prompt(similar_docs, prompt)
+        built_prompt = build_chat_prompt(similar_docs, prompt)
 
         llm = self._get_client(
             provider=provider,
