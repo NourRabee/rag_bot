@@ -30,7 +30,7 @@ def get_response(body: LLMRequest):
         response = llm_client.handle_user_query(settings.session_id, settings.user_id, body.prompt, body.model,
                                                 "ollama")
 
-        return {"response": response}
+        return response
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
@@ -43,7 +43,7 @@ def get_response(body: LLMRequest):
         response = llm_client.handle_user_query(settings.session_id, settings.user_id, body.prompt,
                                                 body.model, "groq")
 
-        return {"response": response}
+        return response
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")

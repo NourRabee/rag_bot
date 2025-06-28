@@ -1,6 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LLMRequest(BaseModel):
     model: str
     prompt: str
+
+
+class Output(BaseModel):
+    response: str = Field(description="The answer of the use's question")

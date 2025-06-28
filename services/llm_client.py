@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from langchain_core.messages import HumanMessage
 
@@ -16,18 +18,16 @@ class LLMClient:
                           namespace="general"):
 
         raw_result = self.pinecone_db.search(prompt, user_id, session_id)
-        print(raw_result)
         similar_docs = self.pinecone_db.get_text(raw_result)
-        print(similar_docs)
 
-        built_prompt = build_chat_prompt(similar_docs, prompt)
+        formatted_prompt, parser = build_chat_prompt(similar_docs, prompt)
 
         llm = self._get_client(
             provider=provider,
             model=model
         )
 
-        message = HumanMessage(content=built_prompt)
+        message = HumanMessage(content=formatted_prompt)
         response = llm.invoke([message])
 
         full_text = f"User: {prompt}\nAssistant: {response.content}"
@@ -36,7 +36,7 @@ class LLMClient:
 
         self.pinecone_db.upsert(docs, namespace)
 
-        return response.content
+        return parser.parse(response.content)
 
     def _get_client(self, provider: str, model: str):
         if provider == "ollama":
