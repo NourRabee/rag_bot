@@ -1,21 +1,17 @@
-from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import PromptTemplate
 
-from schemas.llm import Output
 
 
-def build_chat_prompt(context_docs, current_query):
+def build_model_prompt(context_docs, current_query):
     context = "\n".join(context_docs) if context_docs else ""
-    pydantic_parser = PydanticOutputParser(pydantic_object=Output)
+    # pydantic_parser = PydanticOutputParser(pydantic_object=Output)
 
     if not context or not context.strip():
         prompt_template = PromptTemplate(
             input_variables=["query"],
-            template="""Please answer the following question to the best of your knowledge: {query} and return the answer 
-            in json format: {format_instructions}""",
+            template="""Please answer the following question to the best of your knowledge: {query}"""
         )
-        return prompt_template.format(query=current_query,
-                                      format_instructions=pydantic_parser.get_format_instructions()), pydantic_parser
+        return prompt_template.format(query=current_query)
 
     prompt_template = PromptTemplate(
         input_variables=["context", "query"],
@@ -34,15 +30,37 @@ def build_chat_prompt(context_docs, current_query):
         Context:
         {context}
     
-        User Question: {query}
-    
-        Please provide a helpful and accurate response and return the answer in json format: {format_instructions}.""",
+        User Question: {query}"""
     )
 
     formatted_prompt = prompt_template.format(
         context=context,
         query=current_query,
-        format_instructions=pydantic_parser.get_format_instructions()
     )
 
-    return formatted_prompt, pydantic_parser
+    return formatted_prompt
+
+
+def edit_agent_prompt():
+    custom_agent_prompt = PromptTemplate(
+
+        input_variables=["input", "agent_scratchpad"],
+        template="""
+                    You are a helpful assistant with access to tools.
+
+                    Use the following format strictly:
+
+                    Question: {input}
+                    Thought: You should always think about what to do.
+                    Action: JSON blob with "action" and "action_input" keys.
+                    Observation: Tool output here.
+                    ... (repeat Thought/Action/Observation as needed)
+                    Final Answer: your final response here.
+
+                    If no tool needed, skip Action and Observation and give Final Answer directly.
+
+                    Agent scratchpad:
+                    {agent_scratchpad}
+                    """
+    )
+    return custom_agent_prompt

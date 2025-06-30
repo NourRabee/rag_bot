@@ -2,11 +2,14 @@ import logging
 
 import requests
 from langchain_core.messages import HumanMessage
+from langchain.agents import initialize_agent, AgentType
 
 from core.config import settings
-from utils.prompts import build_chat_prompt
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
+
+from utils.prompts import build_model_prompt, edit_agent_prompt
+from utils.tools import get_weather
 from vectorstore.pinecone_vectordb import PineconeService
 
 
@@ -20,23 +23,33 @@ class LLMClient:
         raw_result = self.pinecone_db.search(prompt, user_id, session_id)
         similar_docs = self.pinecone_db.get_text(raw_result)
 
-        formatted_prompt, parser = build_chat_prompt(similar_docs, prompt)
+        formatted_prompt = build_model_prompt(similar_docs, prompt)
 
         llm = self._get_client(
             provider=provider,
             model=model
         )
 
-        message = HumanMessage(content=formatted_prompt)
-        response = llm.invoke([message])
+        tools = [get_weather]
 
-        full_text = f"User: {prompt}\nAssistant: {response.content}"
+        agent = initialize_agent(
+            tools=tools,
+            llm=llm,
+            agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+            prompt=edit_agent_prompt,
+            handle_parsing_errors=True
+        )
+
+        response = agent.run(input=formatted_prompt)
+
+        full_text = f"User: {prompt}\nAssistant: {response}"
 
         docs = self.pinecone_db.convert_to_docs(full_text, user_id, session_id)
 
         self.pinecone_db.upsert(docs, namespace)
 
-        return parser.parse(response.content)
+        return response
 
     def _get_client(self, provider: str, model: str):
         if provider == "ollama":
@@ -44,15 +57,17 @@ class LLMClient:
 
                 model=model,
                 base_url=settings.ollama_base_url,
-                stream=False
+                stream=False,
             )
         elif provider == "groq":
             return ChatGroq(
                 model=model,
-                api_key=settings.groq_api_key
+                api_key=settings.groq_api_key,
             )
         else:
             return None
+
+
 
     def fetch_ollama_models(self):
         try:
